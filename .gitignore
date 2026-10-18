@@ -1,0 +1,19 @@
+# 운영체제 파일
+.DS_Store
+Thumbs.db
+# IDE/에디터 설정 파일
+.vscode/
+.idea/
+*.swp
+# 언어/프레임워크 (일반 웹 개발)
+# 특정 프레임워크가 감지되지 않아 일반적인 웹 개발 패턴을 적용합니다.
+# 빌드 산출물 및 의존성 폴더
+node_modules/
+dist/
+build/
+*.log
+*.tmp
+# 로그 및 임시 파일
+temp/
+tmp/
+*.bak

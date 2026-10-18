@@ -1,0 +1,1566 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PasteBox</title>
+    <style>
+/* === css/base.css === */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #282840;
+    --bg-card: #2d2d4a;
+    --bg-hover: #363658;
+    --text-primary: #e0e0f0;
+    --text-secondary: #a0a0c0;
+    --text-muted: #707090;
+    --accent: #7c6ff7;
+    --accent-hover: #9588ff;
+    --success: #4caf93;
+    --warning: #f0a040;
+    --danger: #e05555;
+    --info: #5090e0;
+    --border: #3a3a5c;
+    --radius: 8px;
+    --radius-sm: 4px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --font-sans: 'Segoe UI', -apple-system, sans-serif;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+    border: none;
+    outline: none;
+}
+
+input,
+textarea,
+select {
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+/* === css/layout.css === */
+/* Header */
+.app-header {
+    background: var(--bg-secondary);
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.app-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    gap: 8px;
+}
+
+.toolbar-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+    background: var(--border);
+}
+
+.toolbar-btn-add {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.toolbar-btn-add:hover {
+    background: var(--accent-hover);
+}
+
+/* Main Container */
+.main-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+}
+
+/* Status Bar */
+.status-bar {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 4px 24px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Toast */
+.toast-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toast {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    box-shadow: var(--shadow);
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 1.7s forwards;
+    max-width: 320px;
+}
+
+.toast.success {
+    background: var(--success);
+}
+
+.toast.error {
+    background: var(--danger);
+}
+
+.toast.info {
+    background: var(--info);
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toastOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Hidden file input */
+.hidden {
+    display: none;
+}
+/* === css/cards.css === */
+/* Card List */
+.card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+/* Card */
+.paste-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: row;
+}
+
+.paste-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+    transform: translateY(-1px);
+}
+
+.paste-card-copied {
+    border-color: var(--success) !important;
+    box-shadow: 0 0 0 2px var(--success), 0 0 12px rgba(76, 175, 147, 0.3) !important;
+}
+
+/* Drag Handle */
+.paste-card-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    min-height: 100%;
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: grab;
+    flex-shrink: 0;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 1px;
+}
+
+.paste-card-drag-handle:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+
+.paste-card-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Card Body */
+.paste-card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.paste-card-main {
+    padding: 14px 16px;
+    cursor: pointer;
+    min-height: 60px;
+    flex: 1;
+}
+
+.paste-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.paste-card-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    word-break: break-all;
+}
+
+.paste-card-preview-large {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.preview-more {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.preview-html-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Card Footer */
+.paste-card-footer {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.paste-card-type {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.paste-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.card-btn {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    opacity: 0.5;
+    transition: all 0.15s;
+}
+
+.card-btn:hover {
+    opacity: 1;
+    background: var(--bg-hover);
+}
+
+/* Drag States */
+.paste-card.dragging {
+    opacity: 0.4;
+    border-color: var(--accent);
+}
+
+.paste-card.drag-over-top {
+    border-top: 3px solid var(--accent);
+    margin-top: -2px;
+}
+
+.paste-card.drag-over-bottom {
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: -2px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-text {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.empty-hint {
+    font-size: 13px;
+}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.modal-closing {
+    animation: fadeOut 0.2s ease forwards;
+}
+
+.modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 720px;
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 22px;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-shortcut-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-right: auto;
+}
+
+/* ============================================================
+   Fields
+   ============================================================ */
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.field-input {
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.field-input:focus {
+    border-color: var(--accent);
+}
+
+.field-input-textarea {
+    resize: vertical;
+    min-height: 200px;
+    line-height: 1.5;
+}
+
+/* Type Selector */
+.type-selector {
+    display: flex;
+    gap: 6px;
+}
+
+.type-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+}
+
+.type-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+.type-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* Paste Zone */
+.paste-zone {
+    min-height: 160px;
+    padding: 14px;
+    background: var(--bg-primary);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    cursor: text;
+    transition: border-color 0.2s;
+    overflow: auto;
+    max-height: 400px;
+}
+
+.paste-zone:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.paste-zone-hint {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.paste-zone-success {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.paste-zone-preview {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 8px;
+    max-height: 300px;
+    overflow: auto;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn {
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+/* ============================================================
+   Template
+   ============================================================ */
+
+/* Template variable highlight in card preview */
+.preview-template-var {
+    background: #dcfce7;
+    color: #166534;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+/* Template hint box in add/edit modal */
+.template-hint-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.template-hint-box code {
+    background: var(--bg-hover);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--success);
+}
+
+/* Template popup: original preview */
+.template-preview-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 4px;
+}
+
+/* Template popup: result box */
+.template-result-box {
+    background: var(--bg-primary);
+    border: 2px solid var(--success);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 40px;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+</style>
+</head>
+
+<body>
+    <header class="app-header">
+        <div class="app-header-left">
+            <h1 class="app-title">PasteBox</h1>
+            <span class="app-subtitle">Click to copy, paste anywhere</span>
+        </div>
+        <div class="toolbar">
+            <button class="toolbar-btn toolbar-btn-add" id="btn-add">+ Add</button>
+            <button class="toolbar-btn" id="btn-import">Import</button>
+            <button class="toolbar-btn" id="btn-export">Export</button>
+        </div>
+        <input type="file" id="import-file" class="hidden" accept=".json">
+    </header>
+
+    <main class="main-container" id="card-container"></main>
+
+    <div class="toast-container" id="toast-container"></div>
+    <footer class="status-bar">
+        <span id="status-text">Ready</span>
+    </footer>
+
+    <script>
+// === js/enums.js ===
+const PasteType = {
+    TEXT: 'text',
+    HTML: 'html',
+    TEMPLATE: 'template'
+};
+
+const PasteTypeLabels = {
+    [PasteType.TEXT]: 'Text',
+    [PasteType.HTML]: 'Rich HTML',
+    [PasteType.TEMPLATE]: 'Template'
+};
+
+const PasteTypeColors = {
+    [PasteType.TEXT]: { bg: '#dbeafe', text: '#1e40af', border: '#2563eb' },
+    [PasteType.HTML]: { bg: '#f3e8ff', text: '#5b21b6', border: '#7c3aed' },
+    [PasteType.TEMPLATE]: { bg: '#dcfce7', text: '#166534', border: '#16a34a' }
+};
+
+// === js/dataService.js ===
+class DataService {
+    constructor() {
+        this.STORAGE_KEY = 'pastebox-items';
+        this.items = [];
+    }
+
+    init() {
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+            try {
+                this.items = JSON.parse(stored);
+                return;
+            } catch (e) { /* fall through */ }
+        }
+
+        this.items = [
+            {
+                id: 's1',
+                title: 'FQR 참석자',
+                type: 'text',
+                value: 'abc@microsoft.com; efg@microsoft.com; hij@microsoft.com'
+            },
+            {
+                id: 's2',
+                title: '회의 요청 인사말',
+                type: 'text',
+                value: '안녕하세요, 아래 안건으로 회의를 요청드립니다.\n참석 부탁드립니다.'
+            },
+            {
+                id: 's3',
+                title: '주간보고 헤더',
+                type: 'html',
+                value: '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td style="font-family:Segoe UI,sans-serif;font-size:18px;font-weight:bold;color:#ffffff;padding:16px 24px;background-color:#1e3a5f;">Weekly Status Report</td></tr></table>'
+            },
+            {
+                id: 's4',
+                title: '',
+                type: 'text',
+                value: '확인 부탁드립니다. 감사합니다.'
+            },
+            {
+                id: 's5',
+                title: 'PM 그룹',
+                type: 'text',
+                value: 'pm1@microsoft.com; pm2@microsoft.com; pm3@microsoft.com; pm4@microsoft.com'
+            },
+            {
+                id: 's6',
+                title: '회신 요청',
+                type: 'template',
+                value: '안녕하세요, {{건명}} 건 관련하여 {{날짜}}까지 회신 부탁드립니다.\n감사합니다.'
+            },
+            {
+                id: 's7',
+                title: '미팅 안내',
+                type: 'template',
+                value: '안녕하세요, {{날짜}} {{시간}}에 {{주제}} 관련 미팅이 예정되어 있습니다.\n참석 부탁드립니다.'
+            }
+        ];
+        this.save();
+    }
+
+    save() {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.items));
+    }
+
+    getAll() {
+        return this.items;
+    }
+
+    getById(id) {
+        return this.items.find(item => item.id === id);
+    }
+
+    generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    add(item) {
+        item.id = this.generateId();
+        this.items.push(item);
+        this.save();
+        return item;
+    }
+
+    update(id, updates) {
+        const idx = this.items.findIndex(item => item.id === id);
+        if (idx !== -1) {
+            this.items[idx] = { ...this.items[idx], ...updates };
+            this.save();
+            return this.items[idx];
+        }
+        return null;
+    }
+
+    remove(id) {
+        this.items = this.items.filter(item => item.id !== id);
+        this.save();
+    }
+
+    reorder(fromIndex, toIndex) {
+        const [moved] = this.items.splice(fromIndex, 1);
+        this.items.splice(toIndex, 0, moved);
+        this.save();
+    }
+
+    exportJSON() {
+        const blob = new Blob([JSON.stringify(this.items, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pastebox-backup.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    importJSON(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        this.items = data;
+                        this.save();
+                        resolve(data.length);
+                    } else {
+                        reject(new Error('Invalid format'));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    clearAll() {
+        this.items = [];
+        this.save();
+    }
+}
+
+// === js/cardListView.js ===
+class CardListView {
+    constructor(dataService) {
+        this.dataService = dataService;
+        this.onEdit = null;
+        this.container = null;
+        this.dragItem = null;
+        this.dragOverItem = null;
+    }
+
+    render(container) {
+        this.container = container;
+        const items = this.dataService.getAll();
+
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <div class="empty-text">No items yet</div>
+                    <div class="empty-hint">Click <strong>+ Add</strong> to create your first paste item</div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="card-list" id="card-list">';
+        items.forEach((item, index) => {
+            const typeInfo = PasteTypeColors[item.type] || PasteTypeColors[PasteType.TEXT];
+            const typeLabel = PasteTypeLabels[item.type] || 'Text';
+            const hasTitle = item.title && item.title.trim();
+            const preview = this.getPreview(item);
+
+            html += `
+                <div class="paste-card" data-id="${item.id}" data-index="${index}" draggable="true">
+                    <div class="paste-card-drag-handle" title="Drag to reorder">⠿</div>
+                    <div class="paste-card-body">
+                        <div class="paste-card-main" data-id="${item.id}">
+                            ${hasTitle ? `<div class="paste-card-title">${this.escapeHtml(item.title)}</div>` : ''}
+                            <div class="paste-card-preview ${hasTitle ? '' : 'paste-card-preview-large'}">${preview}</div>
+                        </div>
+                        <div class="paste-card-footer">
+                            <span class="paste-card-type" style="background:${typeInfo.bg};color:${typeInfo.text};border:1px solid ${typeInfo.border};">${typeLabel}</span>
+                            <div class="paste-card-actions">
+                                <button class="card-btn card-btn-edit" data-id="${item.id}" title="Edit">✏️</button>
+                                <button class="card-btn card-btn-delete" data-id="${item.id}" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+
+        this.bindCardEvents(container);
+        this.bindDragEvents();
+    }
+
+    bindCardEvents(container) {
+        container.querySelectorAll('.paste-card-main').forEach(el => {
+            el.addEventListener('click', (e) => {
+                this.copyItem(el.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.card-btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.onEdit) this.onEdit(btn.dataset.id);
+            });
+        });
+
+        container.querySelectorAll('.card-btn-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const item = this.dataService.getById(id);
+                const label = item.title || item.value.substring(0, 30);
+                if (confirm(`Delete "${label}"?`)) {
+                    this.dataService.remove(id);
+                    this.render(this.container);
+                    showToast('Deleted', 'info');
+                    updateStatus();
+                }
+            });
+        });
+    }
+
+    bindDragEvents() {
+        const cards = document.querySelectorAll('.paste-card');
+
+        cards.forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                this.dragItem = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => {
+                    card.style.opacity = '0.4';
+                }, 0);
+            });
+
+            card.addEventListener('dragend', (e) => {
+                card.classList.remove('dragging');
+                card.style.opacity = '';
+                this.dragItem = null;
+                this.dragOverItem = null;
+                document.querySelectorAll('.paste-card').forEach(c => {
+                    c.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (card === this.dragItem) return;
+
+                const rect = card.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isAbove = e.clientY < midY;
+
+                document.querySelectorAll('.paste-card').forEach(c => {
+                    c.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+
+                if (isAbove) {
+                    card.classList.add('drag-over-top');
+                } else {
+                    card.classList.add('drag-over-bottom');
+                }
+
+                this.dragOverItem = card;
+            });
+
+            card.addEventListener('dragleave', (e) => {
+                card.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!this.dragItem || card === this.dragItem) return;
+
+                const fromIndex = parseInt(this.dragItem.dataset.index);
+                let toIndex = parseInt(card.dataset.index);
+
+                const rect = card.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isAbove = e.clientY < midY;
+
+                if (fromIndex < toIndex && isAbove) {
+                    toIndex = Math.max(0, toIndex - 1);
+                } else if (fromIndex > toIndex && !isAbove) {
+                    toIndex = toIndex + 1;
+                }
+
+                if (fromIndex !== toIndex) {
+                    this.dataService.reorder(fromIndex, toIndex);
+                    this.render(this.container);
+                    showToast('Reordered', 'info');
+                }
+
+                document.querySelectorAll('.paste-card').forEach(c => {
+                    c.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+            });
+        });
+    }
+
+    getPreview(item) {
+        if (item.type === PasteType.HTML) {
+            return '<span class="preview-html-badge">Rich HTML Content</span>';
+        }
+        if (item.type === PasteType.TEMPLATE) {
+            const highlighted = this.escapeHtml(item.value.replace(/\n/g, ' '))
+                .replace(/\{\{([^}]+)\}\}/g, '<span class="preview-template-var">{{$1}}</span>');
+            if (item.value.length > 120) {
+                const truncated = this.escapeHtml(item.value.substring(0, 120).replace(/\n/g, ' '))
+                    .replace(/\{\{([^}]+)\}\}/g, '<span class="preview-template-var">{{$1}}</span>');
+                return truncated + '…';
+            }
+            return highlighted;
+        }
+        // text
+        const text = item.value.replace(/\n/g, ' ');
+        if (text.length > 120) {
+            return this.escapeHtml(text.substring(0, 120)) + '…';
+        }
+        return this.escapeHtml(text);
+    }
+
+    async copyItem(id) {
+        const item = this.dataService.getById(id);
+        if (!item) return;
+
+        // Template: show variable input popup
+        if (item.type === PasteType.TEMPLATE) {
+            this.showTemplatePopup(item);
+            return;
+        }
+
+        try {
+            if (item.type === PasteType.HTML) {
+                const ok = await copyRichHtml(item.value);
+                if (ok) {
+                    showToast('Copied rich HTML!', 'success');
+                } else {
+                    throw new Error('Rich copy failed');
+                }
+            } else {
+                await navigator.clipboard.writeText(item.value);
+                showToast('Copied!', 'success');
+            }
+
+            this.flashCard(id);
+        } catch (err) {
+            const textarea = document.createElement('textarea');
+            textarea.value = item.value;
+            textarea.style.cssText = 'position:fixed;left:-9999px;';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('Copied (fallback)', 'success');
+        }
+    }
+
+    showTemplatePopup(item) {
+        // Extract variables
+        const varRegex = /\{\{([^}]+)\}\}/g;
+        const vars = [];
+        let match;
+        while ((match = varRegex.exec(item.value)) !== null) {
+            if (!vars.includes(match[1])) {
+                vars.push(match[1]);
+            }
+        }
+
+        if (vars.length === 0) {
+            // No variables, just copy as text
+            navigator.clipboard.writeText(item.value).then(() => {
+                showToast('Copied!', 'success');
+                this.flashCard(item.id);
+            });
+            return;
+        }
+
+        // Build popup
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+
+        let fieldsHtml = '';
+        vars.forEach((v, i) => {
+            fieldsHtml += `
+                <div class="field-group">
+                    <label class="field-label">${this.escapeHtml(v)}</label>
+                    <input class="field-input template-var-input" type="text" data-var="${this.escapeHtml(v)}" placeholder="${this.escapeHtml(v)}" ${i === 0 ? 'autofocus' : ''}>
+                </div>
+            `;
+        });
+
+        // Preview with highlighted vars
+        const previewHtml = this.escapeHtml(item.value)
+            .replace(/\n/g, '<br>')
+            .replace(/\{\{([^}]+)\}\}/g, '<span class="preview-template-var">{{$1}}</span>');
+
+        overlay.innerHTML = `
+            <div class="modal" style="width:480px;">
+                <div class="modal-header">
+                    <h2 class="modal-title">Fill Template: ${this.escapeHtml(item.title || 'Untitled')}</h2>
+                    <button class="modal-close" id="tpl-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="template-preview-box">${previewHtml}</div>
+                    ${fieldsHtml}
+                    <div class="field-group">
+                        <label class="field-label">Result</label>
+                        <div class="template-result-box" id="tpl-result">${this.escapeHtml(item.value)}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span class="modal-shortcut-hint">Ctrl+Enter to copy</span>
+                    <button class="btn btn-secondary" id="tpl-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="tpl-copy" style="background:var(--success);">Copy Result</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const updateResult = () => {
+            let result = item.value;
+            overlay.querySelectorAll('.template-var-input').forEach(input => {
+                const varName = input.dataset.var;
+                const val = input.value || `{{${varName}}}`;
+                result = result.replaceAll(`{{${varName}}}`, val);
+            });
+            const resultBox = document.getElementById('tpl-result');
+            if (resultBox) {
+                resultBox.innerHTML = this.escapeHtml(result).replace(/\n/g, '<br>');
+                resultBox._rawValue = result;
+            }
+        };
+
+        const doCopy = async () => {
+            const resultBox = document.getElementById('tpl-result');
+            const result = resultBox?._rawValue || item.value;
+            try {
+                await navigator.clipboard.writeText(result);
+                showToast('Template copied!', 'success');
+                this.flashCard(item.id);
+            } catch (err) {
+                const textarea = document.createElement('textarea');
+                textarea.value = result;
+                textarea.style.cssText = 'position:fixed;left:-9999px;';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Template copied (fallback)', 'success');
+            }
+            closePopup();
+        };
+
+        const closePopup = () => {
+            document.removeEventListener('keydown', keyHandler);
+            overlay.classList.add('modal-closing');
+            setTimeout(() => overlay.remove(), 200);
+        };
+
+        const keyHandler = (e) => {
+            if (e.key === 'Escape') closePopup();
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                doCopy();
+            }
+        };
+
+        // Events
+        overlay.querySelectorAll('.template-var-input').forEach(input => {
+            input.addEventListener('input', updateResult);
+        });
+        overlay.querySelector('#tpl-copy').addEventListener('click', doCopy);
+        overlay.querySelector('#tpl-cancel').addEventListener('click', closePopup);
+        overlay.querySelector('#tpl-close').addEventListener('click', closePopup);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closePopup();
+        });
+        document.addEventListener('keydown', keyHandler);
+
+        // Initial result
+        updateResult();
+
+        // Focus first input
+        setTimeout(() => overlay.querySelector('.template-var-input')?.focus(), 100);
+    }
+
+    flashCard(id) {
+        const card = document.querySelector(`.paste-card[data-id="${id}"]`);
+        if (card) {
+            card.classList.add('paste-card-copied');
+            setTimeout(() => card.classList.remove('paste-card-copied'), 600);
+        }
+    }
+
+    escapeHtml(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+}
+
+// === js/modalView.js ===
+class ModalView {
+    constructor(dataService) {
+        this.dataService = dataService;
+        this.onSave = null;
+        this.currentId = null;
+        this._keyHandler = null;
+    }
+
+    open(id = null) {
+        this.currentId = id;
+        const item = id ? this.dataService.getById(id) : null;
+        const isEdit = !!item;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">${isEdit ? 'Edit Item' : 'Add New Item'}</h2>
+                    <button class="modal-close" id="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="field-group">
+                        <label class="field-label">Title (optional)</label>
+                        <input class="field-input" type="text" id="modal-title" value="${this.escapeAttr(item?.title || '')}" placeholder="e.g., FQR 참석자">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Type</label>
+                        <div class="type-selector" id="type-selector">
+                            <button class="type-btn ${(!item || item.type === PasteType.TEXT) ? 'active' : ''}" data-type="${PasteType.TEXT}">Text</button>
+                            <button class="type-btn ${item?.type === PasteType.HTML ? 'active' : ''}" data-type="${PasteType.HTML}">Rich HTML</button>
+                            <button class="type-btn ${item?.type === PasteType.TEMPLATE ? 'active' : ''}" data-type="${PasteType.TEMPLATE}">Template</button>
+                        </div>
+                    </div>
+                    <div class="field-group" id="value-group">
+                        <label class="field-label" id="value-label">Content</label>
+                        <textarea class="field-input field-input-textarea" id="modal-value" rows="6" placeholder="Type or paste content here...">${this.escapeAttr(item?.value || '')}</textarea>
+                    </div>
+                    <div class="field-group" id="template-hint-group" style="display:none;">
+                        <div class="template-hint-box">
+                            Use <code>{{변수명}}</code> for variables. Example:<br>
+                            <code>안녕하세요, {{이름}}님. {{날짜}}까지 회신 부탁드립니다.</code>
+                        </div>
+                    </div>
+                    <div class="field-group" id="paste-zone-group" style="display:none;">
+                        <label class="field-label">Or paste rich content here (Ctrl+V from Outlook)</label>
+                        <div class="paste-zone" id="paste-zone" contenteditable="true">
+                            <span class="paste-zone-hint">Click here and Ctrl+V to paste rich content</span>
+                        </div>
+                        <div class="paste-zone-preview" id="paste-zone-preview" style="display:none;">
+                            <div class="field-label" style="margin-bottom:6px;">Preview:</div>
+                            <div id="paste-preview-content"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span class="modal-shortcut-hint">Ctrl+Enter to save</span>
+                    <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="modal-save">${isEdit ? 'Update' : 'Add'}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Close handlers
+        overlay.querySelector('#modal-close').addEventListener('click', () => this.close());
+        overlay.querySelector('#modal-cancel').addEventListener('click', () => this.close());
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) this.close();
+        });
+
+        // Type selector
+        overlay.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                overlay.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.updateTypeUI(btn.dataset.type);
+            });
+        });
+
+        // Paste zone for HTML
+        const pasteZone = overlay.querySelector('#paste-zone');
+        pasteZone.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const html = e.clipboardData.getData('text/html');
+            const text = e.clipboardData.getData('text/plain');
+
+            if (html) {
+                const cleaned = this.cleanPastedHtml(html);
+                document.getElementById('modal-value').value = cleaned;
+                document.getElementById('paste-preview-content').innerHTML = cleaned;
+                document.getElementById('paste-zone-preview').style.display = 'block';
+                pasteZone.innerHTML = '<span class="paste-zone-success">Rich content captured!</span>';
+
+                overlay.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                overlay.querySelector(`[data-type="${PasteType.HTML}"]`).classList.add('active');
+                this.updateTypeUI(PasteType.HTML);
+            } else if (text) {
+                document.getElementById('modal-value').value = text;
+                pasteZone.innerHTML = '<span class="paste-zone-hint">Plain text pasted — switch to Text type if needed</span>';
+            }
+        });
+
+        // Save
+        overlay.querySelector('#modal-save').addEventListener('click', () => this.save());
+
+        // Keyboard
+        this._keyHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.close();
+            }
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                this.save();
+            }
+        };
+        document.addEventListener('keydown', this._keyHandler);
+
+        // Initial type UI
+        const activeType = item?.type || PasteType.TEXT;
+        this.updateTypeUI(activeType);
+
+        // If editing HTML, show preview
+        if (item?.type === PasteType.HTML && item.value) {
+            document.getElementById('paste-preview-content').innerHTML = item.value;
+            document.getElementById('paste-zone-preview').style.display = 'block';
+        }
+
+        // Focus title input
+        setTimeout(() => document.getElementById('modal-title')?.focus(), 100);
+    }
+
+    updateTypeUI(type) {
+        const pasteGroup = document.getElementById('paste-zone-group');
+        const templateHint = document.getElementById('template-hint-group');
+        const valueLabel = document.getElementById('value-label');
+        const valueEl = document.getElementById('modal-value');
+
+        pasteGroup.style.display = 'none';
+        templateHint.style.display = 'none';
+
+        if (type === PasteType.HTML) {
+            pasteGroup.style.display = 'block';
+            valueLabel.textContent = 'HTML Code';
+            valueEl.placeholder = 'HTML will be captured from paste zone above, or type manually...';
+            valueEl.rows = 4;
+        } else if (type === PasteType.TEMPLATE) {
+            templateHint.style.display = 'block';
+            valueLabel.textContent = 'Template Content (use {{변수명}} for variables)';
+            valueEl.placeholder = '안녕하세요, {{이름}}님. {{날짜}}까지 회신 부탁드립니다.';
+            valueEl.rows = 6;
+        } else {
+            valueLabel.textContent = 'Content';
+            valueEl.placeholder = 'Type your text here...';
+            valueEl.rows = 6;
+        }
+    }
+
+    cleanPastedHtml(html) {
+        let cleaned = html;
+        const bodyMatch = cleaned.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+        if (bodyMatch) {
+            cleaned = bodyMatch[1];
+        }
+        cleaned = cleaned.replace(/<!--StartFragment-->/gi, '').replace(/<!--EndFragment-->/gi, '');
+        cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+        cleaned = cleaned.replace(/<meta[^>]*>/gi, '');
+        cleaned = cleaned.replace(/<link[^>]*>/gi, '');
+        cleaned = cleaned.trim();
+        return cleaned;
+    }
+
+    save() {
+        const title = document.getElementById('modal-title').value.trim();
+        const value = document.getElementById('modal-value').value.trim();
+        const activeType = document.querySelector('.type-btn.active')?.dataset.type || PasteType.TEXT;
+
+        if (!value) {
+            showToast('Content is required', 'error');
+            return;
+        }
+
+        if (this.currentId) {
+            this.dataService.update(this.currentId, { title, type: activeType, value });
+            showToast('Updated!', 'success');
+        } else {
+            this.dataService.add({ title, type: activeType, value });
+            showToast('Added!', 'success');
+        }
+
+        this.close();
+        if (this.onSave) this.onSave();
+    }
+
+    close() {
+        if (this._keyHandler) {
+            document.removeEventListener('keydown', this._keyHandler);
+            this._keyHandler = null;
+        }
+        const overlay = document.querySelector('.modal-overlay');
+        if (overlay) {
+            overlay.classList.add('modal-closing');
+            setTimeout(() => overlay.remove(), 200);
+        }
+    }
+
+    escapeAttr(str) {
+        return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+}
+
+// === js/app.js ===
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 2200);
+}
+
+function updateStatus() {
+    const count = app.dataService.getAll().length;
+    document.getElementById('status-text').textContent = `${count} item${count !== 1 ? 's' : ''} | Click card to copy`;
+}
+
+function copyRichHtml(html) {
+    return new Promise((resolve) => {
+        const textarea = document.createElement('textarea');
+        textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
+        textarea.value = ' ';
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        function onCopy(e) {
+            e.preventDefault();
+            e.clipboardData.setData('text/html', html);
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            e.clipboardData.setData('text/plain', tmp.innerText || tmp.textContent || '');
+        }
+
+        document.addEventListener('copy', onCopy);
+        let success = false;
+        try {
+            success = document.execCommand('copy');
+        } catch (err) {
+            console.error('[copyRichHtml] error:', err);
+        }
+        document.removeEventListener('copy', onCopy);
+        document.body.removeChild(textarea);
+        resolve(success);
+    });
+}
+
+const app = {
+    dataService: null,
+    cardListView: null,
+    modalView: null,
+
+    init() {
+        this.dataService = new DataService();
+        this.dataService.init();
+
+        this.cardListView = new CardListView(this.dataService);
+        this.modalView = new ModalView(this.dataService);
+
+        this.cardListView.onEdit = (id) => {
+            this.modalView.open(id);
+        };
+
+        this.modalView.onSave = () => {
+            this.renderCards();
+            updateStatus();
+        };
+
+        this.setupToolbar();
+        this.renderCards();
+        updateStatus();
+    },
+
+    setupToolbar() {
+        document.getElementById('btn-add').addEventListener('click', () => {
+            this.modalView.open();
+        });
+
+        document.getElementById('btn-export').addEventListener('click', () => {
+            this.dataService.exportJSON();
+            showToast('Exported!', 'success');
+        });
+
+        document.getElementById('btn-import').addEventListener('click', () => {
+            document.getElementById('import-file').click();
+        });
+
+        document.getElementById('import-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const count = await this.dataService.importJSON(file);
+                this.renderCards();
+                updateStatus();
+                showToast(`Imported ${count} items`, 'success');
+            } catch (err) {
+                showToast('Import failed: ' + err.message, 'error');
+            }
+            e.target.value = '';
+        });
+    },
+
+    renderCards() {
+        const container = document.getElementById('card-container');
+        this.cardListView.render(container);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => app.init());
+
+</script>
+</body>
+
+</html>

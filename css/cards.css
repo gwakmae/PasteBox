@@ -1,0 +1,473 @@
+/* Card List */
+.card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+/* Card */
+.paste-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: row;
+}
+
+.paste-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+    transform: translateY(-1px);
+}
+
+.paste-card-copied {
+    border-color: var(--success) !important;
+    box-shadow: 0 0 0 2px var(--success), 0 0 12px rgba(76, 175, 147, 0.3) !important;
+}
+
+/* Drag Handle */
+.paste-card-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    min-height: 100%;
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: grab;
+    flex-shrink: 0;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 1px;
+}
+
+.paste-card-drag-handle:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+
+.paste-card-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Card Body */
+.paste-card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.paste-card-main {
+    padding: 14px 16px;
+    cursor: pointer;
+    min-height: 60px;
+    flex: 1;
+}
+
+.paste-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.paste-card-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    word-break: break-all;
+}
+
+.paste-card-preview-large {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.preview-more {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.preview-html-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Card Footer */
+.paste-card-footer {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.paste-card-type {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.paste-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.card-btn {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    opacity: 0.5;
+    transition: all 0.15s;
+}
+
+.card-btn:hover {
+    opacity: 1;
+    background: var(--bg-hover);
+}
+
+/* Drag States */
+.paste-card.dragging {
+    opacity: 0.4;
+    border-color: var(--accent);
+}
+
+.paste-card.drag-over-top {
+    border-top: 3px solid var(--accent);
+    margin-top: -2px;
+}
+
+.paste-card.drag-over-bottom {
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: -2px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-text {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.empty-hint {
+    font-size: 13px;
+}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.modal-closing {
+    animation: fadeOut 0.2s ease forwards;
+}
+
+.modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 720px;
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 22px;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-shortcut-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-right: auto;
+}
+
+/* ============================================================
+   Fields
+   ============================================================ */
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.field-input {
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.field-input:focus {
+    border-color: var(--accent);
+}
+
+.field-input-textarea {
+    resize: vertical;
+    min-height: 200px;
+    line-height: 1.5;
+}
+
+/* Type Selector */
+.type-selector {
+    display: flex;
+    gap: 6px;
+}
+
+.type-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+}
+
+.type-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+.type-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* Paste Zone */
+.paste-zone {
+    min-height: 160px;
+    padding: 14px;
+    background: var(--bg-primary);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    cursor: text;
+    transition: border-color 0.2s;
+    overflow: auto;
+    max-height: 400px;
+}
+
+.paste-zone:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.paste-zone-hint {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.paste-zone-success {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.paste-zone-preview {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 8px;
+    max-height: 300px;
+    overflow: auto;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn {
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+/* ============================================================
+   Template
+   ============================================================ */
+
+/* Template variable highlight in card preview */
+.preview-template-var {
+    background: #dcfce7;
+    color: #166534;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+/* Template hint box in add/edit modal */
+.template-hint-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.template-hint-box code {
+    background: var(--bg-hover);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--success);
+}
+
+/* Template popup: original preview */
+.template-preview-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 4px;
+}
+
+/* Template popup: result box */
+.template-result-box {
+    background: var(--bg-primary);
+    border: 2px solid var(--success);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 40px;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
