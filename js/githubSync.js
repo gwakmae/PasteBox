@@ -1,7 +1,6 @@
-// [1] 위치/함수: 신규 파일 생성
-// 수정 후:
 class GitHubSync {
     static STATE_KEY = 'pastebox-github-sync-v1';
+    static TOKEN_KEY = 'pastebox-github-credential-v1';
     static DATA_PATH = 'data/prompts.json';
     static MAX_BYTES = 750000;
 
@@ -64,6 +63,7 @@ class GitHubSync {
         this.timer = null;
         this.message = '';
         this.state = this._readState();
+        this.token = this._readRememberedToken();
 
         this.dataService.onChange = () => {
             if (this.suppressChange) {
@@ -86,6 +86,51 @@ class GitHubSync {
                 event.returnValue = '';
             }
         });
+    }
+
+    _readRememberedToken() {
+        try {
+            const saved = JSON.parse(
+                localStorage.getItem(GitHubSync.TOKEN_KEY) || 'null'
+            );
+
+            if (
+                !saved ||
+                typeof saved.owner !== 'string' ||
+                typeof saved.repo !== 'string' ||
+                typeof saved.token !== 'string' ||
+                saved.token.length === 0 ||
+                saved.token.length > 1024 ||
+                saved.owner.toLowerCase() !== this.state.owner.toLowerCase() ||
+                saved.repo.toLowerCase() !== this.state.repo.toLowerCase()
+            ) {
+                return '';
+            }
+
+            return saved.token.trim();
+        } catch {
+            return '';
+        }
+    }
+
+    _rememberToken(remember) {
+        if (!remember) {
+            localStorage.removeItem(GitHubSync.TOKEN_KEY);
+            return;
+        }
+
+        if (!this.token || !this.state.owner || !this.state.repo) {
+            throw new Error('저장할 연결 정보가 없습니다.');
+        }
+
+        localStorage.setItem(
+            GitHubSync.TOKEN_KEY,
+            JSON.stringify({
+                owner: this.state.owner,
+                repo: this.state.repo,
+                token: this.token
+            })
+        );
     }
 
     _emptyState() {
@@ -411,10 +456,22 @@ class GitHubSync {
                             name="token" type="password" required
                             autocomplete="off" spellcheck="false">
                     </div>
+                    <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;">
+                        <input type="checkbox" name="remember"
+                            style="margin-top:4px;">
+                        <span>
+                            이 개인 기기에 토큰 기억
+                            <small style="display:block;color:var(--text-secondary);">
+                                브라우저에 암호화 없이 저장합니다. 공용 PC에서는 선택하지 마세요.
+                            </small>
+                        </span>
+                    </label>
                     <p style="font-size:12px;color:var(--text-secondary);">
                         데이터 저장소는 README가 있는 비공개 저장소로 준비해 주세요.
                         해당 저장소의 Contents 읽기·쓰기 권한이 필요합니다.
-                        토큰은 메모리에만 보관하며 새로고침하면 다시 입력합니다.
+                        ‘이 개인 기기에 토큰 기억’을 선택하면 다시 접속해도 연결 정보를 유지합니다.
+                        선택하지 않으면 새로고침 시 토큰을 다시 입력해야 합니다.
+                        연결 해제 시 이 브라우저에 기억한 토큰도 삭제합니다.
                         프롬프트 사본은 이 브라우저에 남습니다.
                     </p>
                 </div>
@@ -430,6 +487,8 @@ class GitHubSync {
         const ownerInput = form.elements.namedItem('owner');
         const repoInput = form.elements.namedItem('repo');
         const tokenInput = form.elements.namedItem('token');
+        const rememberInput = form.elements.namedItem('remember');
+        rememberInput.checked = Boolean(this._readRememberedToken());
         let submitting = false;
 
         ownerInput.value = this.state.owner;
@@ -492,6 +551,20 @@ class GitHubSync {
             submitting = false;
 
             if (connected) {
+                try {
+                    this._rememberToken(rememberInput.checked);
+                } catch {
+                    try {
+                        localStorage.removeItem(GitHubSync.TOKEN_KEY);
+                    } catch {
+                        // 저장소 접근이 차단된 경우 현재 페이지의 메모리 연결만 유지합니다.
+                    }
+
+                    showToast(
+                        '연결은 완료됐지만 토큰 기억에 실패했습니다. 다음 접속 시 다시 입력해 주세요.',
+                        'error'
+                    );
+                }
                 tokenInput.value = '';
                 overlay.remove();
             } else {
@@ -766,6 +839,7 @@ class GitHubSync {
 
         try {
             clearTimeout(this.timer);
+            localStorage.removeItem(GitHubSync.TOKEN_KEY);
             this._replaceLocal([]);
             this.token = '';
             this.state = this._emptyState();
@@ -780,4 +854,3 @@ class GitHubSync {
         }
     }
 }
-// 이유: 비공개 저장소 인증·SHA 기반 저장·로컬 변경 보존·명시적 불러오기·연결 해제를 독립 구현
